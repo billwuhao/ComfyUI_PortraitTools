@@ -1,0 +1,15 @@
+[project]
+name = "audiotools-mw"
+description = "Portrait Tools: Facial detection cropping, alignment, ID photo, etc."
+version = "1.0.0"
+license = {file = "LICENSE"}
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/billwuhao/ComfyUI_PortraitTools"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = "mw"
+DisplayName = "MW-ComfyUI_PortraitTools"
+Icon = ""
