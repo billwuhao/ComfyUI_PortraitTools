@@ -3,12 +3,15 @@
 # 人像处理等相关的 ComfyUI 节点
 
 目前包含以下节点:
+- 图像自动水印;
 - 图片人脸对齐(正脸);
 - 人脸检测裁剪, 可选是否对齐, 可调裁剪区域大小, 角度;
 - 各种证件照一键生成;
 - 美化照片, 包括亮度, 饱和度, 锐化, 磨皮等.
 
 示例:
+
+![](https://github.com/billwuhao/ComfyUI_PortraitTools/blob/main/images/2025-04-14_21-54-33.png)
 
 ![](https://github.com/billwuhao/ComfyUI_PortraitTools/blob/main/images/2025-04-11_07-06-36.png)
 
@@ -24,6 +27,8 @@
 
 
 ## 📣 更新
+
+[2025-04-14]⚒️: 新增自动图像水印. 
 
 [2025-04-11]⚒️: 发布版本 v1.0.0. 
 

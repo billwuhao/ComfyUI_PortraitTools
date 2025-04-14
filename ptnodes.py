@@ -6,7 +6,9 @@ import numpy as np
 from comfy import model_management
 import folder_paths
 import sys
-from PIL import Image
+import math
+from PIL import Image, ImageFont, ImageDraw, ImageEnhance, ImageChops
+
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.append(current_dir)
@@ -81,6 +83,167 @@ def rgb_to_tensor(image):
     
     return image
 
+
+class Watermarker(object):
+    """图片水印工具"""
+
+    def __init__(
+        self,
+        input_image: Image.Image,
+        text: str,
+        font_file: str,
+        angle=30,
+        color="#8B8B1B",
+        opacity=0.15,
+        size=50,
+        space=75,
+        chars_per_line=8,
+        font_height_crop=1.2,
+    ):
+        """_summary_
+
+        Parameters
+        ----------
+        input_image : Image.Image
+            PIL图片对象
+        text : str
+            水印文字
+        angle : int, optional
+            水印角度, by default 30
+        color : str, optional
+            水印颜色, by default "#8B8B1B"
+        font_file : str, optional
+            字体文件, by default "青鸟华光简琥珀.ttf"
+        font_height_crop : float, optional
+            字体高度裁剪比例, by default 1.2
+        opacity : float, optional
+            水印透明度, by default 0.15
+        size : int, optional
+            字体大小, by default 50
+        space : int, optional
+            水印间距, by default 75
+        chars_per_line : int, optional
+            每行字符数, by default 8
+        """
+        self.input_image = input_image
+        self.text = text
+        self.angle = angle
+        self.color = color
+        self.font_file = font_file
+        self.font_height_crop = font_height_crop
+        self.opacity = opacity
+        self.size = size
+        self.space = space
+        self.chars_per_line = chars_per_line
+        self.image = self._add_mark_striped()
+
+    @staticmethod
+    def set_image_opacity(image, opacity: float):
+        alpha = image.split()[3]
+        alpha = ImageEnhance.Brightness(alpha).enhance(opacity)
+        image.putalpha(alpha)
+        return image
+
+    @staticmethod
+    def crop_image_edge(image):
+        bg = Image.new(mode="RGBA", size=image.size)
+        diff = ImageChops.difference(image, bg)
+        bbox = diff.getbbox()
+        if bbox:
+            return image.crop(bbox)
+        return image
+
+    def _add_mark_striped(self):
+        origin_image = self.input_image.convert("RGBA")
+        width = len(self.text) * self.size
+        height = round(self.size * self.font_height_crop)
+        watermark_image = Image.new(mode="RGBA", size=(width, height))
+        draw_table = ImageDraw.Draw(watermark_image)
+        draw_table.text(
+            (0, 0),
+            self.text,
+            fill=self.color,
+            font=ImageFont.truetype(self.font_file, size=self.size),
+        )
+        watermark_image = Watermarker.crop_image_edge(watermark_image)
+        Watermarker.set_image_opacity(watermark_image, self.opacity)
+
+        c = int(math.sqrt(origin_image.size[0] ** 2 + origin_image.size[1] ** 2))
+        watermark_mask = Image.new(mode="RGBA", size=(c, c))
+        y, idx = 0, 0
+        while y < c:
+            x = -int((watermark_image.size[0] + self.space) * 0.5 * idx)
+            idx = (idx + 1) % 2
+            while x < c:
+                watermark_mask.paste(watermark_image, (x, y))
+                x += watermark_image.size[0] + self.space
+            y += watermark_image.size[1] + self.space
+
+        watermark_mask = watermark_mask.rotate(self.angle)
+        origin_image.paste(
+            watermark_mask,
+            (int((origin_image.size[0] - c) / 2), int((origin_image.size[1] - c) / 2)),
+            mask=watermark_mask.split()[3],
+        )
+        return origin_image
+
+
+class ImageWatermark:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "image": ("IMAGE",),
+                "text": ("STRING", {"default": "@明文视界"}),
+                "font_file": ("STRING", {"default": ""}),
+                "angle": ("INT", {"default": 30, "min": 0, "max": 360, "step": 1}),
+                "red": ("INT", {"default": 0, "min": 0, "max": 255, "step": 1}),
+                "green": ("INT", {"default": 0, "min": 0, "max": 255, "step": 1}),
+                "blue": ("INT", {"default": 0, "min": 0, "max": 255, "step": 1}),
+                "opacity": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.1}),
+                "size": ("INT", {"default": 50, "min": 1, "max": 100, "step": 1}),
+                "space": ("INT", {"default": 75, "min": 1, "max": 150, "step": 1}),
+                # "chars_per_line": ("INT", {"default": 8, "min": 1, "max": 10, "step": 1}),
+                # "font_height_crop": ("FLOAT", {"default": 1.2, "min": 0.1, "max": 5.0, "step": 0.1})
+            },
+        }
+
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("image",)
+    FUNCTION = "watermarkgen"
+    CATEGORY = "🎤MW/MW-PortraitTools"
+
+    def watermarkgen(
+        self,
+        image,
+        text: str,
+        font_file: str,
+        angle=30,
+        red=0,
+        green=0,
+        blue=0,
+        opacity=0.15,
+        size=50,
+        space=75,
+        chars_per_line=8,
+        font_height_crop=1.2,
+    ):
+        if font_file.strip() == "":
+            font_file = os.path.join(current_dir, "ChironGoRoundTC-600SB.ttf")
+        watermarker = Watermarker(
+            input_image=tensor2pil(image),
+            text=text,
+            font_file=font_file,
+            angle=angle,
+            color=f"#{red:02x}{green:02x}{blue:02x}",
+            opacity=opacity,
+            size=size,
+            space=space,
+            chars_per_line=chars_per_line,
+            font_height_crop=font_height_crop,
+        )
+
+        return (pil2tensor(watermarker.image),)
 
 class AlignFace:
     @classmethod
@@ -666,6 +829,7 @@ NODE_CLASS_MAPPINGS = {
     "AlignFace": AlignFace,
     "IDPhotos": IDPhotos,
     "BeautifyPhoto": BeautifyPhoto,
+    "ImageWatermark": ImageWatermark,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -673,4 +837,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "AlignFace": "Align Face",
     "IDPhotos": "ID Photos",
     "BeautifyPhoto": "Beautify Photo",
+    "ImageWatermark": "Image Watermark",
 }

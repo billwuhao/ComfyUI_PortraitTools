@@ -3,13 +3,15 @@
 # ComfyUI Nodes for Portrait Processing
 
 Currently includes the following nodes:
-
+- Automatic image watermarking;
 - Image face alignment (frontal);
 - Face detection and cropping, with optional alignment, adjustable crop area size, and angle;
 - One-click generation of various passport photos;
 - Photo enhancement, including brightness, saturation, sharpening, and skin smoothing.
 
 Examples:
+
+![](https://github.com/billwuhao/ComfyUI_PortraitTools/blob/main/images/2025-04-14_21-54-33.png)
 
 ![](https://github.com/billwuhao/ComfyUI_PortraitTools/blob/main/images/2025-04-11_07-06-36.png)
 
@@ -24,6 +26,8 @@ Examples:
 ![](https://github.com/billwuhao/ComfyUI_PortraitTools/blob/main/images/2025-04-11_07-10-24.png)
 
 ## 📣 Updates
+
+[2025-04-14]⚒️: Add automatic image watermarking. 
 
 [2025-04-11] ⚒️: Released version v1.0.0.
 
