@@ -252,6 +252,7 @@ class AlignFace:
             "required": {
                 "image": ("IMAGE",),
                 "half":  ("BOOLEAN", {"default": False}),
+                "angle_offset": ("FLOAT", {"default": 1.0, "min": -180.0, "max": 180.0, "step": 0.1}),
                 # "unload_model": ("BOOLEAN", {"default": False}),
             },
         }
@@ -264,6 +265,7 @@ class AlignFace:
     def detect_and_align_whole_image(self,
                                 image, 
                                 half, 
+                                angle_offset=1.0,
                                 conf_threshold=0.8,
                                 nms_threshold=0.4, 
                                 use_origin_size=True):
@@ -307,7 +309,7 @@ class AlignFace:
         eye_center = ((left_eye[0] + right_eye[0]) // 2, (left_eye[1] + right_eye[1]) // 2)
         
         # 获取旋转矩阵
-        M = cv2.getRotationMatrix2D(eye_center, angle, 1)
+        M = cv2.getRotationMatrix2D(eye_center, angle + angle_offset, 1)
         
         # 对整个图像进行旋转
         h, w = img_rgb.shape[:2]
@@ -821,7 +823,6 @@ class BeautifyPhoto:
         result_tensor = rgb_to_tensor(result_image)
 
         return (result_tensor,)
-
 
 
 NODE_CLASS_MAPPINGS = {
