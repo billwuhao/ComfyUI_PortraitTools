@@ -3,6 +3,7 @@
 # ComfyUI Nodes for Portrait Processing
 
 Currently includes the following nodes:
+- Automatic video watermarking;
 - Automatic image watermarking;
 - Image face alignment (frontal);
 - Face detection and cropping, with optional alignment, adjustable crop area size, and angle;
@@ -26,6 +27,8 @@ Examples:
 ![](https://github.com/billwuhao/ComfyUI_PortraitTools/blob/main/images/2025-04-11_07-10-24.png)
 
 ## 📣 Updates
+
+[2025-04-24]⚒️: Add automatic video watermarking. 
 
 [2025-04-14]⚒️: Add automatic image watermarking. 
 

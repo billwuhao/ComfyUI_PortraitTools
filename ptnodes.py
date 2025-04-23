@@ -99,6 +99,8 @@ class Watermarker(object):
         space=75,
         chars_per_line=8,
         font_height_crop=1.2,
+        offset_x=0,
+        offset_y=0,
     ):
         """_summary_
 
@@ -135,6 +137,8 @@ class Watermarker(object):
         self.size = size
         self.space = space
         self.chars_per_line = chars_per_line
+        self.offset_x = offset_x
+        self.offset_y = offset_y
         self.image = self._add_mark_striped()
 
     @staticmethod
@@ -168,8 +172,10 @@ class Watermarker(object):
         watermark_image = Watermarker.crop_image_edge(watermark_image)
         Watermarker.set_image_opacity(watermark_image, self.opacity)
 
-        c = int(math.sqrt(origin_image.size[0] ** 2 + origin_image.size[1] ** 2))
+        # 确保水印覆盖整个图像，增加水印掩码的尺寸
+        c = int(math.sqrt(origin_image.size[0] ** 2 + origin_image.size[1] ** 2) * 1.5)
         watermark_mask = Image.new(mode="RGBA", size=(c, c))
+        
         y, idx = 0, 0
         while y < c:
             x = -int((watermark_image.size[0] + self.space) * 0.5 * idx)
@@ -180,11 +186,19 @@ class Watermarker(object):
             y += watermark_image.size[1] + self.space
 
         watermark_mask = watermark_mask.rotate(self.angle)
+        # 计算安全的偏移范围
+        max_offset = c // 4  # 限制最大偏移量为水印掩码尺寸的1/4
+        safe_offset_x = max(min(self.offset_x, max_offset), -max_offset)
+        safe_offset_y = max(min(self.offset_y, max_offset), -max_offset)
+        
+        paste_x = int((origin_image.size[0] - c) / 2) + safe_offset_x
+        paste_y = int((origin_image.size[1] - c) / 2) + safe_offset_y
         origin_image.paste(
             watermark_mask,
-            (int((origin_image.size[0] - c) / 2), int((origin_image.size[1] - c) / 2)),
+            (paste_x, paste_y),
             mask=watermark_mask.split()[3],
         )
+
         return origin_image
 
 
@@ -193,7 +207,7 @@ class ImageWatermark:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "image": ("IMAGE",),
+                "images": ("IMAGE",),
                 "text": ("STRING", {"default": "@明文视界"}),
                 "font_file": ("STRING", {"default": ""}),
                 "angle": ("INT", {"default": 30, "min": 0, "max": 360, "step": 1}),
@@ -203,19 +217,21 @@ class ImageWatermark:
                 "opacity": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.1}),
                 "size": ("INT", {"default": 50, "min": 1, "max": 100, "step": 1}),
                 "space": ("INT", {"default": 75, "min": 1, "max": 150, "step": 1}),
+                "movement_type": (["None", "up_down", "left_right", "angel_change"], {"default": "None"}),
+                "movement_amount": ("FLOAT", {"default": 1, "min": 0.2, "max": 5, "step": 0.2}),
                 # "chars_per_line": ("INT", {"default": 8, "min": 1, "max": 10, "step": 1}),
                 # "font_height_crop": ("FLOAT", {"default": 1.2, "min": 0.1, "max": 5.0, "step": 0.1})
             },
         }
 
     RETURN_TYPES = ("IMAGE",)
-    RETURN_NAMES = ("image",)
+    RETURN_NAMES = ("images",)
     FUNCTION = "watermarkgen"
     CATEGORY = "🎤MW/MW-PortraitTools"
 
     def watermarkgen(
         self,
-        image,
+        images,
         text: str,
         font_file: str,
         angle=30,
@@ -225,25 +241,77 @@ class ImageWatermark:
         opacity=0.15,
         size=50,
         space=75,
+        movement_type="None",
+        movement_amount=1,
         chars_per_line=8,
         font_height_crop=1.2,
     ):
         if font_file.strip() == "":
             font_file = os.path.join(current_dir, "ChironGoRoundTC-600SB.ttf")
-        watermarker = Watermarker(
-            input_image=tensor2pil(image),
-            text=text,
-            font_file=font_file,
-            angle=angle,
-            color=f"#{red:02x}{green:02x}{blue:02x}",
-            opacity=opacity,
-            size=size,
-            space=space,
-            chars_per_line=chars_per_line,
-            font_height_crop=font_height_crop,
-        )
+            
+        # 处理批量图像
+        batch_size = images.shape[0]
+        result_tensors = []
+        
+        for i in range(batch_size):
+            # 获取当前图像
+            current_image = images[i:i+1]
+            pil_image = tensor2pil(current_image)
+            
+            # 获取图像尺寸
+            img_width, img_height = pil_image.size
+            
+            # 计算安全的最大偏移量（不超过图像尺寸的1/4）
+            max_offset_x = img_width // 8
+            max_offset_y = img_height // 8
+            
+            # 根据移动类型计算当前图像的水印参数
+            current_angle = angle
+            current_offset_x = 0
+            current_offset_y = 0
+            
+            if movement_type == "angel_change":
+                # 角度在原始角度的基础上变化
+                current_angle = (angle + i * movement_amount) % 360
+            elif movement_type == "up_down":
+                # 上下移动水印位置，使用正弦函数实现平滑循环
+                cycle_position = (i * movement_amount) % (max_offset_y * 4)
+                current_offset_y = int(math.sin(cycle_position * math.pi / (max_offset_y * 2)) * max_offset_y)
+            elif movement_type == "left_right":
+                # 左右移动水印位置，使用正弦函数实现平滑循环
+                cycle_position = (i * movement_amount) % (max_offset_x * 4)
+                current_offset_x = int(math.sin(cycle_position * math.pi / (max_offset_x * 2)) * max_offset_x)
+            # elif movement_type == "circular":
+            #     # 圆形轨迹移动
+            #     cycle = 2 * math.pi * (i * movement_amount % 100) / 100
+            #     current_offset_x = int(math.cos(cycle) * max_offset_x)
+            #     current_offset_y = int(math.sin(cycle) * max_offset_y)
+            else:
+                # 不移动水印位置
+                current_offset_x = 0
+                current_offset_y = 0
 
-        return (pil2tensor(watermarker.image),)
+            watermarker = Watermarker(
+                input_image=pil_image,
+                text=text,
+                font_file=font_file,
+                angle=current_angle,
+                color=f"#{red:02x}{green:02x}{blue:02x}",
+                opacity=opacity,
+                size=size,
+                space=space,
+                chars_per_line=chars_per_line,
+                font_height_crop=font_height_crop,
+                offset_x=current_offset_x,
+                offset_y=current_offset_y
+            )
+
+            # 转换回tensor并添加到结果列表
+            result_tensor = pil2tensor(watermarker.image)
+            result_tensors.append(result_tensor)
+        
+        # 合并所有结果为一个批量tensor
+        return (torch.cat(result_tensors, dim=0),)
 
 class AlignFace:
     @classmethod
