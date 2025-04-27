@@ -3,6 +3,8 @@
 # ComfyUI Nodes for Portrait Processing
 
 Currently includes the following nodes:
+- Image loading, customizable loading path, including subdirectories
+  - Please rename the file `extra_help_file.yaml.example` to `extra_help_file.yaml` and remove the annotation `# `. Add a custom loading directory such as `images_dir: D:\AIGC\ComfyUI-Data\images_input`, Linux is `/`.
 - Automatic video watermarking;
 - Automatic image watermarking;
 - Image face alignment (frontal);
@@ -11,6 +13,8 @@ Currently includes the following nodes:
 - Photo enhancement, including brightness, saturation, sharpening, and skin smoothing.
 
 Examples:
+
+![](https://github.com/billwuhao/ComfyUI_PortraitTools/blob/main/images/2025-04-28_03-30-27.png)
 
 ![](https://github.com/billwuhao/ComfyUI_PortraitTools/blob/main/images/2025-04-14_21-54-33.png)
 
@@ -27,6 +31,8 @@ Examples:
 ![](https://github.com/billwuhao/ComfyUI_PortraitTools/blob/main/images/2025-04-11_07-10-24.png)
 
 ## 📣 Updates
+
+[2025-04-28]⚒️: Image loading, customizable loading path, including subdirectories. 
 
 [2025-04-24]⚒️: Add automatic video watermarking. 
 
