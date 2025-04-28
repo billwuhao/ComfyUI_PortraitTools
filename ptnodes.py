@@ -217,6 +217,9 @@ def get_path():
             data = yaml.safe_load(f)
             images_dir = data["images_dir"]
             images_dir = Path(images_dir)
+            if not os.path.exists(images_dir):
+                raise FileNotFoundError(f"Customize images loading path not found: {images_dir}")
+
             print(f"Customize images loading path: {images_dir}")
             return images_dir
     except FileNotFoundError:
@@ -302,7 +305,7 @@ class LoadImageMW:
     def INPUT_TYPES(s):
         return {"required":{"image": (sorted(s.files), {"image_upload": True})},}
 
-    CATEGORY = "🎤MW/MW-Audio-Tools"
+    CATEGORY = "🎤MW/MW-PortraitTools"
     RETURN_TYPES = ("IMAGE", "MASK")
     FUNCTION = "load_image"
 
