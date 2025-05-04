@@ -527,160 +527,160 @@ def refine_foreground(image_bchw, masks_b1hw):
     
     return torch.from_numpy(np.stack(refined_fg))
 
-class RMBG:
-    def __init__(self):
-        self.models = {
-            "RMBG-2.0": RMBGModel(),
-            "INSPYRENET": InspyrenetModel(),
-            "BEN": BENModel(),
-            "BEN2": BEN2Model()
-        }
+# class RMBG:
+#     def __init__(self):
+#         self.models = {
+#             "RMBG-2.0": RMBGModel(),
+#             "INSPYRENET": InspyrenetModel(),
+#             "BEN": BENModel(),
+#             "BEN2": BEN2Model()
+#         }
     
-    @classmethod
-    def INPUT_TYPES(s):
-        tooltips = {
-            "image": "Input image to be processed for background removal.",
-            "model": "Select the background removal model to use (RMBG-2.0, INSPYRENET, BEN).",
-            "sensitivity": "Adjust the strength of mask detection (higher values result in more aggressive detection).",
-            "process_res": "Set the processing resolution (higher values require more VRAM and may increase processing time).",
-            "mask_blur": "Specify the amount of blur to apply to the mask edges (0 for no blur, higher values for more blur).",
-            "mask_offset": "Adjust the mask boundary (positive values expand the mask, negative values shrink it).",
-            "background": "Choose the background color for the final output (Alpha for transparent background).",
-            "invert_output": "Enable to invert both the image and mask output (useful for certain effects).",
-            "optimize": "Enable model optimization for faster processing (may affect output quality).",
-            "refine_foreground": "Use Fast Foreground Colour Estimation to optimize transparent background"
-        }
+#     @classmethod
+#     def INPUT_TYPES(s):
+#         tooltips = {
+#             "image": "Input image to be processed for background removal.",
+#             "model": "Select the background removal model to use (RMBG-2.0, INSPYRENET, BEN).",
+#             "sensitivity": "Adjust the strength of mask detection (higher values result in more aggressive detection).",
+#             "process_res": "Set the processing resolution (higher values require more VRAM and may increase processing time).",
+#             "mask_blur": "Specify the amount of blur to apply to the mask edges (0 for no blur, higher values for more blur).",
+#             "mask_offset": "Adjust the mask boundary (positive values expand the mask, negative values shrink it).",
+#             "background": "Choose the background color for the final output (Alpha for transparent background).",
+#             "invert_output": "Enable to invert both the image and mask output (useful for certain effects).",
+#             "optimize": "Enable model optimization for faster processing (may affect output quality).",
+#             "refine_foreground": "Use Fast Foreground Colour Estimation to optimize transparent background"
+#         }
         
-        return {
-            "required": {
-                "image": ("IMAGE", {"tooltip": tooltips["image"]}),
-                "model": (list(AVAILABLE_MODELS.keys()), {"tooltip": tooltips["model"]}),
-            },
-            "optional": {
-                "sensitivity": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.01, "tooltip": tooltips["sensitivity"]}),
-                "process_res": ("INT", {"default": 1024, "min": 256, "max": 2048, "step": 8, "tooltip": tooltips["process_res"]}),
-                "mask_blur": ("INT", {"default": 0, "min": 0, "max": 64, "step": 1, "tooltip": tooltips["mask_blur"]}),
-                "mask_offset": ("INT", {"default": 0, "min": -64, "max": 64, "step": 1, "tooltip": tooltips["mask_offset"]}),
-                "background": (["Alpha", "black", "white", "gray", "green", "blue", "red"], {"default": "Alpha", "tooltip": tooltips["background"]}),
-                "invert_output": ("BOOLEAN", {"default": False, "tooltip": tooltips["invert_output"]}),
-                "optimize": (["default", "on"], {"default": "default", "tooltip": tooltips["optimize"]}),
-                "refine_foreground": ("BOOLEAN", {"default": False, "tooltip": tooltips["refine_foreground"]})
-            }
-        }
+#         return {
+#             "required": {
+#                 "image": ("IMAGE", {"tooltip": tooltips["image"]}),
+#                 "model": (list(AVAILABLE_MODELS.keys()), {"tooltip": tooltips["model"]}),
+#             },
+#             "optional": {
+#                 "sensitivity": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.01, "tooltip": tooltips["sensitivity"]}),
+#                 "process_res": ("INT", {"default": 1024, "min": 256, "max": 2048, "step": 8, "tooltip": tooltips["process_res"]}),
+#                 "mask_blur": ("INT", {"default": 0, "min": 0, "max": 64, "step": 1, "tooltip": tooltips["mask_blur"]}),
+#                 "mask_offset": ("INT", {"default": 0, "min": -64, "max": 64, "step": 1, "tooltip": tooltips["mask_offset"]}),
+#                 "background": (["Alpha", "black", "white", "gray", "green", "blue", "red"], {"default": "Alpha", "tooltip": tooltips["background"]}),
+#                 "invert_output": ("BOOLEAN", {"default": False, "tooltip": tooltips["invert_output"]}),
+#                 "optimize": (["default", "on"], {"default": "default", "tooltip": tooltips["optimize"]}),
+#                 "refine_foreground": ("BOOLEAN", {"default": False, "tooltip": tooltips["refine_foreground"]})
+#             }
+#         }
 
-    RETURN_TYPES = ("IMAGE", "MASK", "IMAGE")
-    RETURN_NAMES = ("IMAGE", "MASK", "MASK_IMAGE")
-    FUNCTION = "process_image"
-    CATEGORY = "🧪AILab/🧽RMBG"
+#     RETURN_TYPES = ("IMAGE", "MASK", "IMAGE")
+#     RETURN_NAMES = ("IMAGE", "MASK", "MASK_IMAGE")
+#     FUNCTION = "process_image"
+#     CATEGORY = "🧪AILab/🧽RMBG"
 
-    def process_image(self, image, model, **params):
-        try:
-            processed_images = []
-            processed_masks = []
+#     def process_image(self, image, model, **params):
+#         try:
+#             processed_images = []
+#             processed_masks = []
             
-            bg_colors = {
-                "Alpha": None,
-                "black": (0, 0, 0),
-                "white": (255, 255, 255),
-                "gray": (128, 128, 128),
-                "green": (0, 255, 0),
-                "blue": (0, 0, 255),
-                "red": (255, 0, 0)
-            }
+#             bg_colors = {
+#                 "Alpha": None,
+#                 "black": (0, 0, 0),
+#                 "white": (255, 255, 255),
+#                 "gray": (128, 128, 128),
+#                 "green": (0, 255, 0),
+#                 "blue": (0, 0, 255),
+#                 "red": (255, 0, 0)
+#             }
             
-            model_instance = self.models[model]
+#             model_instance = self.models[model]
             
-            # Check and download model if needed
-            cache_status, message = model_instance.check_model_cache(model)
-            if not cache_status:
-                print(f"Cache check: {message}")
-                print("Downloading required model files...")
-                download_status, download_message = model_instance.download_model(model)
-                if not download_status:
-                    handle_model_error(download_message)
-                print("Model files downloaded successfully")
+#             # Check and download model if needed
+#             cache_status, message = model_instance.check_model_cache(model)
+#             if not cache_status:
+#                 print(f"Cache check: {message}")
+#                 print("Downloading required model files...")
+#                 download_status, download_message = model_instance.download_model(model)
+#                 if not download_status:
+#                     handle_model_error(download_message)
+#                 print("Model files downloaded successfully")
             
-            for img in image:
-                # Get mask from specific model
-                mask = model_instance.process_image(img, model, params)
+#             for img in image:
+#                 # Get mask from specific model
+#                 mask = model_instance.process_image(img, model, params)
                 
-                # Ensure mask is in the correct format
-                if isinstance(mask, list):
-                    masks = [m.convert("L") for m in mask if isinstance(m, Image.Image)]
-                    mask = masks[0] if masks else None
-                elif isinstance(mask, Image.Image):
-                    mask = mask.convert("L")
+#                 # Ensure mask is in the correct format
+#                 if isinstance(mask, list):
+#                     masks = [m.convert("L") for m in mask if isinstance(m, Image.Image)]
+#                     mask = masks[0] if masks else None
+#                 elif isinstance(mask, Image.Image):
+#                     mask = mask.convert("L")
 
-                # Post-process mask
-                mask_tensor = pil2tensor(mask)
-                mask_tensor = mask_tensor * (1 + (1 - params["sensitivity"]))
-                mask_tensor = torch.clamp(mask_tensor, 0, 1)
-                mask = tensor2pil(mask_tensor)
+#                 # Post-process mask
+#                 mask_tensor = pil2tensor(mask)
+#                 mask_tensor = mask_tensor * (1 + (1 - params["sensitivity"]))
+#                 mask_tensor = torch.clamp(mask_tensor, 0, 1)
+#                 mask = tensor2pil(mask_tensor)
                 
-                if params["mask_blur"] > 0:
-                    mask = mask.filter(ImageFilter.GaussianBlur(radius=params["mask_blur"]))
+#                 if params["mask_blur"] > 0:
+#                     mask = mask.filter(ImageFilter.GaussianBlur(radius=params["mask_blur"]))
                 
-                if params["mask_offset"] != 0:
-                    if params["mask_offset"] > 0:
-                        for _ in range(params["mask_offset"]):
-                            mask = mask.filter(ImageFilter.MaxFilter(3))
-                    else:
-                        for _ in range(-params["mask_offset"]):
-                            mask = mask.filter(ImageFilter.MinFilter(3))
+#                 if params["mask_offset"] != 0:
+#                     if params["mask_offset"] > 0:
+#                         for _ in range(params["mask_offset"]):
+#                             mask = mask.filter(ImageFilter.MaxFilter(3))
+#                     else:
+#                         for _ in range(-params["mask_offset"]):
+#                             mask = mask.filter(ImageFilter.MinFilter(3))
                 
-                if params["invert_output"]:
-                    mask = Image.fromarray(255 - np.array(mask))
+#                 if params["invert_output"]:
+#                     mask = Image.fromarray(255 - np.array(mask))
 
-                # Convert to tensors for refine_foreground
-                img_tensor = torch.from_numpy(np.array(tensor2pil(img))).permute(2, 0, 1).unsqueeze(0) / 255.0
-                mask_tensor = torch.from_numpy(np.array(mask)).unsqueeze(0).unsqueeze(0) / 255.0
+#                 # Convert to tensors for refine_foreground
+#                 img_tensor = torch.from_numpy(np.array(tensor2pil(img))).permute(2, 0, 1).unsqueeze(0) / 255.0
+#                 mask_tensor = torch.from_numpy(np.array(mask)).unsqueeze(0).unsqueeze(0) / 255.0
 
-                # Create final image
-                orig_image = tensor2pil(img)
+#                 # Create final image
+#                 orig_image = tensor2pil(img)
                 
-                if params.get("refine_foreground", False):
-                    refined_fg = refine_foreground(img_tensor, mask_tensor)
-                    refined_fg = tensor2pil(refined_fg[0].permute(1, 2, 0))
-                    r, g, b = refined_fg.split()
-                    foreground = Image.merge('RGBA', (r, g, b, mask))
-                else:
-                    orig_rgba = orig_image.convert("RGBA")
-                    r, g, b, _ = orig_rgba.split()
-                    foreground = Image.merge('RGBA', (r, g, b, mask))
+#                 if params.get("refine_foreground", False):
+#                     refined_fg = refine_foreground(img_tensor, mask_tensor)
+#                     refined_fg = tensor2pil(refined_fg[0].permute(1, 2, 0))
+#                     r, g, b = refined_fg.split()
+#                     foreground = Image.merge('RGBA', (r, g, b, mask))
+#                 else:
+#                     orig_rgba = orig_image.convert("RGBA")
+#                     r, g, b, _ = orig_rgba.split()
+#                     foreground = Image.merge('RGBA', (r, g, b, mask))
 
-                if params["background"] != "Alpha":
-                    bg_color = bg_colors[params["background"]]
-                    bg_image = Image.new('RGBA', orig_image.size, (*bg_color, 255))
-                    composite_image = Image.alpha_composite(bg_image, foreground)
-                    processed_images.append(pil2tensor(composite_image.convert("RGB")))
-                else:
-                    processed_images.append(pil2tensor(foreground))
+#                 if params["background"] != "Alpha":
+#                     bg_color = bg_colors[params["background"]]
+#                     bg_image = Image.new('RGBA', orig_image.size, (*bg_color, 255))
+#                     composite_image = Image.alpha_composite(bg_image, foreground)
+#                     processed_images.append(pil2tensor(composite_image.convert("RGB")))
+#                 else:
+#                     processed_images.append(pil2tensor(foreground))
                 
-                processed_masks.append(pil2tensor(mask))
+#                 processed_masks.append(pil2tensor(mask))
 
-            # Create mask image for visualization
-            mask_images = []
-            for mask_tensor in processed_masks:
-                # Convert mask to RGB image format for visualization
-                mask_image = mask_tensor.reshape((-1, 1, mask_tensor.shape[-2], mask_tensor.shape[-1])).movedim(1, -1).expand(-1, -1, -1, 3)
-                mask_images.append(mask_image)
+#             # Create mask image for visualization
+#             mask_images = []
+#             for mask_tensor in processed_masks:
+#                 # Convert mask to RGB image format for visualization
+#                 mask_image = mask_tensor.reshape((-1, 1, mask_tensor.shape[-2], mask_tensor.shape[-1])).movedim(1, -1).expand(-1, -1, -1, 3)
+#                 mask_images.append(mask_image)
             
-            mask_image_output = torch.cat(mask_images, dim=0)
+#             mask_image_output = torch.cat(mask_images, dim=0)
             
-            return (torch.cat(processed_images, dim=0), torch.cat(processed_masks, dim=0), mask_image_output)
+#             return (torch.cat(processed_images, dim=0), torch.cat(processed_masks, dim=0), mask_image_output)
             
-        except Exception as e:
-            handle_model_error(f"Error in image processing: {str(e)}")
-            # Return original image and empty mask on error
-            empty_mask = torch.zeros((image.shape[0], image.shape[2], image.shape[3]))
-            empty_mask_image = empty_mask.reshape((-1, 1, empty_mask.shape[-2], empty_mask.shape[-1])).movedim(1, -1).expand(-1, -1, -1, 3)
-            return (image, empty_mask, empty_mask_image)
+#         except Exception as e:
+#             handle_model_error(f"Error in image processing: {str(e)}")
+#             # Return original image and empty mask on error
+#             empty_mask = torch.zeros((image.shape[0], image.shape[2], image.shape[3]))
+#             empty_mask_image = empty_mask.reshape((-1, 1, empty_mask.shape[-2], empty_mask.shape[-1])).movedim(1, -1).expand(-1, -1, -1, 3)
+#             return (image, empty_mask, empty_mask_image)
 
-# Node Mapping
-NODE_CLASS_MAPPINGS = {
-    "RMBG": RMBG
-}
+# # Node Mapping
+# NODE_CLASS_MAPPINGS = {
+#     "RMBG": RMBG
+# }
 
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "RMBG": "Remove Background (RMBG)"
-} 
+# NODE_DISPLAY_NAME_MAPPINGS = {
+#     "RMBG": "Remove Background (RMBG)"
+# } 

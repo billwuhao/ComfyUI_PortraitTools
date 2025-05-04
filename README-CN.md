@@ -61,6 +61,8 @@ pip install -r requirements.txt
 
 ## 鸣谢
 
+感谢 @1038lab 的出色工作。此 GitHub 存储库中使用的 RMBG 代码来源于 [ComfyUI-RMBG](https://github.com/1038lab/ComfyUI-RMBG). 并遵循相同的 GPL-3.0 许可证.
+
 感谢以下项目:
 
 - [HivisionIDPhotos](https://github.com/Zeyi-Lin/HivisionIDPhotos)

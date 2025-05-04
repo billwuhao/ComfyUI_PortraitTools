@@ -60,6 +60,8 @@ Otherwise, download [detection_Resnet50_Final.pth](https://huggingface.co/salmon
 
 ## Acknowledgements
 
+Thank you @1038lab for their excellent work. The RMBG code used in this GitHub repository is sourced from [ComfyUI RMBG](https://github.com/1038lab/ComfyUI-RMBG). And follow the same GPL-3.0 license
+
 Thanks to the following projects:
 
 - [HivisionIDPhotos](https://github.com/Zeyi-Lin/HivisionIDPhotos)

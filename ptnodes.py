@@ -17,7 +17,7 @@ if current_dir not in sys.path:
 from retinaface import RetinaFace
 from layout_calculator import generate_layout_photo, generate_layout_image
 from beauty import grindSkin, make_whitening, adjust_brightness_contrast_sharpen_saturation
-from AILab_RMBG import (AVAILABLE_MODELS,
+from AI1038Lab_RMBG import (AVAILABLE_MODELS,
                         RMBGModel,
                         BENModel,
                         BEN2Model,
@@ -366,12 +366,12 @@ class LoadImageMW:
             m.update(f.read())
         return m.digest().hex()
 
-    @classmethod
-    def VALIDATE_INPUTS(s, image):
-        if not folder_paths.exists_annotated_filepath(image + "[input]"):
-            return "Invalid image file: {}".format(image)
+    # @classmethod
+    # def VALIDATE_INPUTS(s, image):
+    #     if not folder_paths.exists_annotated_filepath(image + "[input]"):
+    #         return "Invalid image file: {}".format(image)
 
-        return True
+    #     return True
 
 
 class ImageWatermark:
@@ -680,18 +680,15 @@ bg_colors = {
 
 class IDPhotos:
     def __init__(self):
-        self.models = {
-            "RMBG-2.0": RMBGModel(),
-            "INSPYRENET": InspyrenetModel(),
-            "BEN": BENModel(),
-            "BEN2": BEN2Model()
-        }
+        self.models = None
+
     @classmethod
     def INPUT_TYPES(s):
         return {
             "required":{
                 "image":("IMAGE",),
                 "rmbg_model":(list(AVAILABLE_MODELS),{"default":"RMBG-2.0"}),
+                "unload_model":("BOOLEAN",{"default":True}),
                 "bg_color":(list(bg_colors.keys()),{"default":"Alpha"}),
                 "size":(size_list,{"default":"一寸,413,295"}),
                 "kb":("INT",{"default":500,"min":5,"max":2000,"step":1}),
@@ -722,7 +719,7 @@ class IDPhotos:
     FUNCTION = "gen_img"
     CATEGORY = "🎤MW/MW-PortraitTools"
         
-    def gen_img(self, image, rmbg_model, bg_color, size, face_reduction, face_up_down, angle_offset, kb, dpi=300):
+    def gen_img(self, image, rmbg_model, unload_model, bg_color, size, face_reduction, face_up_down, angle_offset, kb, dpi=300):
         # 解析尺寸参数
         size_parts = size.split(',')
         size = (int(size_parts[1]), int(size_parts[2])) 
@@ -732,6 +729,10 @@ class IDPhotos:
         standard_photo = self.photo_gen(image, size, face_reduction, face_up_down, angle_offset, by_size=True)
         rmbg_standard_photo = self.image_rmbg(standard_photo, rmbg_model, bg_color)
         print_photos = self.print_photos_gen(rmbg_standard_photo, size, kb, dpi)
+
+        if unload_model:
+            self.models = None
+            torch.cuda.empty_cache()
 
         return (rmbg_standard_photo, rmbg_hd_photo, print_photos)
     
@@ -931,6 +932,14 @@ class IDPhotos:
 
 
     def image_rmbg(self, image, model, bg_color):
+        if self.models is None:
+            self.models = {
+                "RMBG-2.0": RMBGModel(),
+                "INSPYRENET": InspyrenetModel(),
+                "BEN": BENModel(),
+                "BEN2": BEN2Model()
+            }
+
         model_instance = self.models[model]
         params = {
             "sensitivity": 1.0,
