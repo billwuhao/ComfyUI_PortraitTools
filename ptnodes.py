@@ -311,7 +311,7 @@ class LoadImageMW:
 
     def load_image(self, image):
         import node_helpers
-        image_path = folder_paths.get_annotated_filepath(image, self.images_dir)
+        image_path = folder_paths.get_annotated_filepath(image)
 
         img = node_helpers.pillow(Image.open, image_path)
 
@@ -729,7 +729,7 @@ class IDPhotos:
         standard_photo = self.photo_gen(image, size, face_reduction, face_up_down, angle_offset, by_size=True)
         rmbg_standard_photo = self.image_rmbg(standard_photo, rmbg_model, bg_color)
         print_photos = self.print_photos_gen(rmbg_standard_photo, size, kb, dpi)
-
+        
         if unload_model:
             self.models = None
             torch.cuda.empty_cache()
