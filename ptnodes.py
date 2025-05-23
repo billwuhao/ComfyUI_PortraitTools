@@ -678,10 +678,8 @@ bg_colors = {
     "snow_white": (242, 240, 240)  
 }
 
+MODEL_CACHE = None
 class IDPhotos:
-    def __init__(self):
-        self.models = None
-
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -731,7 +729,8 @@ class IDPhotos:
         print_photos = self.print_photos_gen(rmbg_standard_photo, size, kb, dpi)
         
         if unload_model:
-            self.models = None
+            global MODEL_CACHE
+            MODEL_CACHE = None
             torch.cuda.empty_cache()
 
         return (rmbg_standard_photo, rmbg_hd_photo, print_photos)
@@ -930,17 +929,17 @@ class IDPhotos:
         
         return print_photos
 
-
     def image_rmbg(self, image, model, bg_color):
-        if self.models is None:
-            self.models = {
+        global MODEL_CACHE
+        if MODEL_CACHE is None:
+            MODEL_CACHE = {
                 "RMBG-2.0": RMBGModel(),
                 "INSPYRENET": InspyrenetModel(),
                 "BEN": BENModel(),
                 "BEN2": BEN2Model()
             }
 
-        model_instance = self.models[model]
+        model_instance = MODEL_CACHE[model]
         params = {
             "sensitivity": 1.0,
             "process_res": 1024,
