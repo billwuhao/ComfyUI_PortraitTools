@@ -14,10 +14,10 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.append(current_dir)
 
-from retinaface import RetinaFace
-from layout_calculator import generate_layout_photo, generate_layout_image
-from beauty import grindSkin, make_whitening, adjust_brightness_contrast_sharpen_saturation
-from AI1038Lab_RMBG import (AVAILABLE_MODELS,
+from .retinaface import RetinaFace
+from .layout_calculator import generate_layout_photo, generate_layout_image
+from .beauty import grindSkin, make_whitening, adjust_brightness_contrast_sharpen_saturation
+from .AI1038Lab_RMBG import (AVAILABLE_MODELS,
                         RMBGModel,
                         BENModel,
                         BEN2Model,
