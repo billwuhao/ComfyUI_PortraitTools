@@ -1,3 +1,3 @@
-from beauty.base_adjust import *
-from beauty.grind_skin import *
-from beauty.whitening import *
+from .base_adjust import *
+from .grind_skin import *
+from .whitening import *
