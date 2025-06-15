@@ -680,6 +680,8 @@ bg_colors = {
 
 MODEL_CACHE = None
 class IDPhotos:
+    def __init__(self):
+        self.model_name = None
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -931,15 +933,17 @@ class IDPhotos:
 
     def image_rmbg(self, image, model, bg_color):
         global MODEL_CACHE
-        if MODEL_CACHE is None:
-            MODEL_CACHE = {
-                "RMBG-2.0": RMBGModel(),
-                "INSPYRENET": InspyrenetModel(),
-                "BEN": BENModel(),
-                "BEN2": BEN2Model()
-            }
+        if MODEL_CACHE is None or model != self.model_name:
+            if model == "RMBG-2.0":
+                MODEL_CACHE = RMBGModel()
+            elif model == "INSPYRENET":
+                MODEL_CACHE = InspyrenetModel()
+            elif model == "BEN":
+                MODEL_CACHE = BENModel()
+            elif model == "BEN2":
+                MODEL_CACHE = BEN2Model()
+            self.model_name = model
 
-        model_instance = MODEL_CACHE[model]
         params = {
             "sensitivity": 1.0,
             "process_res": 1024,
@@ -951,17 +955,17 @@ class IDPhotos:
             "refine_foreground": False
         }
         # Check and download model if needed
-        cache_status, message = model_instance.check_model_cache(model)
+        cache_status, message = MODEL_CACHE.check_model_cache(model)
         if not cache_status:
             print(f"Cache check: {message}")
             print("Downloading required model files...")
-            download_status, download_message = model_instance.download_model(model)
+            download_status, download_message = MODEL_CACHE.download_model(model)
             if not download_status:
                 handle_model_error(download_message)
             print("Model files downloaded successfully")
         
         # Get mask from specific model
-        mask = model_instance.process_image(image, model, params)
+        mask = MODEL_CACHE.process_image(image, model, params)
 
         # Ensure mask is in the correct format
         if isinstance(mask, list):

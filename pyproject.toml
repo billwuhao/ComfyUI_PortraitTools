@@ -1,7 +1,7 @@
 [project]
 name = "portraittools-mw"
 description = "Portrait Tools: Facial detection cropping, alignment, ID photo, etc."
-version = "1.0.8"
+version = "1.0.9"
 license = {file = "LICENSE"}
 dependencies = []
 
